@@ -4,15 +4,15 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <NotesList />
+  <notes-list />
   
-  <RouterView />
+  <router-view />
 
 </template>
 
 <style scoped>
 
 @media (min-width: 1024px) {
-  
+
 }
 </style>

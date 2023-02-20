@@ -10,5 +10,15 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  server: {
+    proxy: {
+      '/dairy': {
+        ws: true,
+        changeOrigin: true,
+        target: 'http://pve.lycoris.site:9780',
+        secure: false,
+      }
+    }
   }
 })

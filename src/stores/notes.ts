@@ -1,4 +1,4 @@
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { isEqual, pick } from 'lodash'
 import axios from 'axios'
@@ -18,61 +18,67 @@ export interface Conflict {
 }
 
 export const useNotesStore = defineStore('notes', () => {
-  const notes = ref<Note[]>([])
+  const localNotes = reactive<Note[]>([])
   const diffs = reactive<Note[]>([])
 
-  async function getNotes() {
-    if (!notes.value.length) notes.value = await getNoteFromRemote()
-    return notes
-  }
+  ;(async () => {
+    localNotes.splice(0)
+    localNotes.push(...await remoteNote())
+  })()
 
   function setNote(note: Note) {
     diffs.push(note)
   }
 
   async function newNote(note: Note) {
-    await axios({
+    const { data } = await axios({
       method: 'POST',
-      url: 'http://pve.lycoris.site:9780/dairy/addDairy',
+      url: '/dairy/addDairy',
       params: pick(note, ['title', 'name', 'detail']),
     })
-    notes.value = await getNoteFromRemote()
+
+    if (!data.success) throw new Error(`Error in updating note "${note.title}", code: ${data.code}`)
+
+    localNotes.push(data.data.item)
   }
 
-  async function getNoteFromRemote(): Promise<Note[]> {
+  async function remoteNote(): Promise<Note[]> {
     const { data } = await axios({
       method: 'GET',
-      url: 'http://pve.lycoris.site:9780/dairy/selectDairy',
+      url: '/dairy/selectDairy',
     })
-    return data
+    return data?.data.items ?? []
   }
 
   async function sync(): Promise<Conflict[]> {
     const conflicts: Conflict[] = []
 
     for (const diff of diffs) {
-      const remote = await getNoteFromRemote().then(remotes => remotes.find(remote => remote.id === diff.id))
-      const local = await getNotes().then(note => note.value.find(local => local.id === diff.id))
+      const remote = await remoteNote().then(remotes => remotes.find(remote => remote.id === diff.id))
+      const local = localNotes.find(local => local.id === diff.id)
 
       if (isEqual(local, remote)) {
         const { data } = await axios({
           method: 'POST',
-          url: 'http://pve.lycoris.site:9780/dairy/updateDairy',
+          url: '/dairy/updateDairy',
           params: pick(diff, ['title', 'name', 'detail', 'id']),
         })
 
-        if (!data.success) throw new Error(`Error in updating note "[${diff.id}] ${diff.title}"`)
+        if (!data.success) throw new Error(`Error in updating note "[${diff.id}] ${diff.title}", code: ${data.code}`)
 
         continue
       }
       conflicts.push({ local, remote, diff })
     }
 
-    notes.value = await getNoteFromRemote()
+    localNotes.splice(0)
+    localNotes.push(...await remoteNote())
     diffs.splice(0)
 
     if (conflicts.length) return conflicts
   }
 
-  return { getNotes, setNote, newNote, sync, diffs }
+  const notes = computed(() => localNotes)
+
+  return { setNote, newNote, sync, diffs, notes }
 })

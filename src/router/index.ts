@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import EmptyView from '@/views/EmptyView.vue'
-import NoteEditViewVue from '@/views/NoteEditView.vue'
+
+const NoteEditViewVue = () => import('@/views/NoteEditView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

@@ -7,7 +7,7 @@ const noteStore = useNotesStore()
 
 <template>
   <aside>
-    <router-link v-for="note in noteStore.notes" class="link" :to="`/${note.id}`">{{ note.name }}</router-link>
+    <router-link v-for="note in noteStore.notes" class="link" :to="`/${note.id}`">{{ note.title }}</router-link>
   </aside>
 </template>
 

@@ -9,6 +9,7 @@ export interface Note {
   time?: string
   title?: string
   detail?: string
+  state?: 'none' | 'edited' | 'conflict'
 }
 
 export interface Conflict {
@@ -20,15 +21,12 @@ export interface Conflict {
 export const useNotesStore = defineStore('notes', () => {
   const localNotes = reactive<Note[]>([])
   const diffs = reactive<Note[]>([])
+  const conflicts = reactive<Conflict[]>([])
 
   ;(async () => {
     localNotes.splice(0)
     localNotes.push(...await remoteNote())
   })()
-
-  function setNote(note: Note) {
-    diffs.push(note)
-  }
 
   async function newNote(note: Note) {
     const { data } = await axios({
@@ -50,8 +48,7 @@ export const useNotesStore = defineStore('notes', () => {
     return data?.data.items ?? []
   }
 
-  async function sync(): Promise<Conflict[]> {
-    const conflicts: Conflict[] = []
+  async function sync(): Promise<boolean> {
 
     for (const diff of diffs) {
       const remote = await remoteNote().then(remotes => remotes.find(remote => remote.id === diff.id))
@@ -65,20 +62,25 @@ export const useNotesStore = defineStore('notes', () => {
         })
 
         if (!data.success) throw new Error(`Error in updating note "[${diff.id}] ${diff.title}", code: ${data.code}`)
+        
+        const index = localNotes.findIndex(local => local.id === diff.id)
+        localNotes[index] = data.data.item
 
         continue
       }
       conflicts.push({ local, remote, diff })
     }
 
-    localNotes.splice(0)
-    localNotes.push(...await remoteNote())
     diffs.splice(0)
 
-    if (conflicts.length) return conflicts
+    return Boolean(conflicts.length)
+  }
+
+  function getNote(id: number): Note {
+    return diffs.find(n => n.id === id) ?? localNotes.find(n => n.id === id)
   }
 
   const notes = computed(() => localNotes)
 
-  return { setNote, newNote, sync, diffs, notes }
+  return { getNote, newNote, sync, diffs, notes }
 })

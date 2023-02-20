@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { isEqual, pick } from 'lodash'
 import axios from 'axios'
@@ -9,7 +9,7 @@ export interface Note {
   time?: string
   title?: string
   detail?: string
-  state?: 'none' | 'edited' | 'conflict'
+  state?: 'edited' | 'conflict'
 }
 
 export interface Conflict {
@@ -82,5 +82,5 @@ export const useNotesStore = defineStore('notes', () => {
 
   const notes = computed(() => localNotes)
 
-  return { getNote, newNote, sync, diffs, notes }
+  return { getNote, newNote, sync, diffs, notes, conflicts }
 })

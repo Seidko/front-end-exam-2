@@ -1,24 +1,27 @@
 <script setup lang="ts">
 import { useNotesStore } from '@/stores/notes'
-import type { Note } from '@/stores/notes'
 import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { editor } from 'monaco-editor'
+import type { Note } from '@/stores/notes'
 
 const noteStore = useNotesStore()
 const route = useRoute()
+const router = useRouter()
 
 const note = computed(() => noteStore.getNote(+route.params.id))
 const editorRef = ref<HTMLElement>()
 const dark = window.matchMedia('(prefers-color-scheme: dark)')
 let editorInstanse: editor.IStandaloneCodeEditor
 
-const onSave = (e: KeyboardEvent) => {
+const onSave = async (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault()
 
     updateDiff(note.value, { detail: editorInstanse.getValue()})
-    console.log(noteStore.sync())
+    if (await noteStore.sync()) {
+      router.push('/conflict')
+    }
   }
 }
 

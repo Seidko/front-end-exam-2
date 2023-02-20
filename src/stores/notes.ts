@@ -1,6 +1,6 @@
 import { reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { isEqual } from 'lodash'
+import { isEqual, pick } from 'lodash'
 import axios from 'axios'
 
 export interface Note {
@@ -31,11 +31,10 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   async function newNote(note: Note) {
-    const { detail, name, title } = note
     await axios({
       method: 'POST',
       url: 'http://pve.lycoris.site:9780/dairy/addDairy',
-      params: { detail, name, title },
+      params: pick(note, ['title', 'name', 'detail']),
     })
     notes.value = await getNoteFromRemote()
   }
@@ -50,37 +49,30 @@ export const useNotesStore = defineStore('notes', () => {
 
   async function sync(): Promise<Conflict[]> {
     const conflicts: Conflict[] = []
-    const updated: Note[] = []
 
     for (const diff of diffs) {
       const remote = await getNoteFromRemote().then(remotes => remotes.find(remote => remote.id === diff.id))
       const local = await getNotes().then(note => note.value.find(local => local.id === diff.id))
 
       if (isEqual(local, remote)) {
-        const { id, detail, name, title } = diff
         const { data } = await axios({
           method: 'POST',
           url: 'http://pve.lycoris.site:9780/dairy/updateDairy',
-          params: { id, detail, name, title },
+          params: pick(diff, ['title', 'name', 'detail', 'id']),
         })
 
-        if (!data.success) throw new Error(`Error in updating note "[${id}] ${title}"`)
-        updated.push(local)
+        if (!data.success) throw new Error(`Error in updating note "[${diff.id}] ${diff.title}"`)
 
         continue
       }
       conflicts.push({ local, remote, diff })
     }
 
-    const remotes = await getNoteFromRemote()
-    for (const local of updated) {
-      const remote = remotes.find(remote => remote.id === local.id)
-
-      ;({ id: local.id } = remote)
-    }
+    notes.value = await getNoteFromRemote()
+    diffs.splice(0)
 
     if (conflicts.length) return conflicts
   }
 
-  return { getNotes, setNote, diffs, sync }
+  return { getNotes, setNote, newNote, sync, diffs }
 })

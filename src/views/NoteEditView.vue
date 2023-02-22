@@ -3,7 +3,6 @@ import { useNotesStore } from '@/stores/notes'
 import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { editor } from 'monaco-editor'
-import type { Note } from '@/stores/notes'
 
 const noteStore = useNotesStore()
 const route = useRoute()
@@ -18,22 +17,17 @@ const onSave = async (e: KeyboardEvent) => {
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault()
 
-    updateDiff(note.value, { detail: editorInstanse.getValue()})
+    noteStore.updateDiff(note.value, { detail: editorInstanse.getValue()})
     if (await noteStore.sync()) {
       router.push('/conflict')
     }
   }
 }
 
-const updateDiff = (previous: Note, current: Note) => {
-  if (previous === undefined || current === undefined) return
-  if (previous.detail !== current.detail) noteStore.diffs.push({ ...previous, detail: current.detail })
-}
-
 watch(note, (newNote, oldNote) => {
   const content = editorInstanse.getValue()
-  if (newNote?.detail !== content) updateDiff(oldNote, { detail: content })
-
+  if (newNote?.detail === content) return
+  noteStore.updateDiff(oldNote, { detail: content })
   editorInstanse.setValue(newNote?.detail ?? '')
 })
 dark.addEventListener('change', m => editorInstanse?.updateOptions({ theme: m.matches ? 'vs-dark' : 'vs-light' }))
@@ -53,7 +47,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  updateDiff(note.value, { detail: editorInstanse.getValue()})
+  noteStore.updateDiff(note.value, { detail: editorInstanse.getValue()})
 
   editorInstanse.dispose()
   document.removeEventListener('keydown', onSave, false)

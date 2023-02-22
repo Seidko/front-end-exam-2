@@ -11,6 +11,10 @@ const conflict = computed(() => noteStore.conflicts.find(c => c.diff.id === +rou
 const editorRef = ref<HTMLElement>()
 let editorInstanse: editor.IStandaloneDiffEditor
 
+const onConfirm = () => {
+  noteStore.resovleConflict({ ...conflict.value.diff, detail: editorInstanse.getModel().modified.getValue() })
+}
+
 onMounted(() => {
   editorInstanse = editor.createDiffEditor(editorRef.value, {
 		enableSplitViewResizing: false,
@@ -22,16 +26,16 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // updateDiff(note.value, { detail: editorInstanse.getValue()})
 
-  // editorInstanse.dispose()
-  // document.removeEventListener('keydown', onSave, false)
+  editorInstanse.dispose()
+  document.removeEventListener('keydown', onConfirm, false)
 })
 
 </script>
 
 <template>
   <div ref="editorRef"></div>
+  <button @click="onConfirm">确认合并</button>
 </template>
 
 <style scoped>
@@ -39,5 +43,17 @@ div {
   width: 100%;
   height: 100vh;
   overflow: hidden;
+}
+
+button {
+  background-color: #007ACC;
+  color: white;
+  position: absolute;
+  border: transparent;
+  height: 30px;
+  width: 80px;
+  right: 5vw;
+  bottom: 5vh;
+  border-radius: 2px;
 }
 </style>

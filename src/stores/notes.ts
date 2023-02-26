@@ -112,8 +112,8 @@ export const useNotesStore = defineStore('notes', () => {
 
   async function searchNote(query: string): Promise<Note[]> {
     const res = await Promise.all([
-      search(query, 2),
       search(query, 1),
+      search(query, 2),
       search(query, 3),
     ])
     

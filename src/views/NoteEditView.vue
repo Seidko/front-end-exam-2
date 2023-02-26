@@ -62,8 +62,6 @@ onMounted(() => {
 onUnmounted(() => {
   noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
 
-  console.log({ ...note.value, detail: editorInstanse.getValue()})
-  console.log(noteStore.diffs)
   document.removeEventListener('keydown', onSave, false)
   editorInstanse.dispose()
 })

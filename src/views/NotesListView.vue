@@ -1,19 +1,26 @@
 <script setup lang="ts"> 
 import NoteListItem from '@/components/NoteListItem.vue'
+import type { Note } from '@/stores/notes'
 import { useNotesStore } from '@/stores/notes'
-import { storeToRefs } from 'pinia'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const noteStore = useNotesStore()
 const router = useRouter()
 const route = useRoute()
 
-const { notes } = storeToRefs(noteStore)
+const query = ref('')
+const searchedNote = ref<Note[]>([])
 
-function orderByTime(desc: boolean) {
-  notes.value.sort((a, b) => a.time - b.time)
-  if (desc) notes.value.reverse()
-}
+watch(query, async query => {
+  if (!query.length) return
+  searchedNote.value = await noteStore.searchNote(query).then(n => n.sort((a, b) => b.time - a.time))
+})
+
+const notes = computed(() => {
+  if (!!query.value.length) return searchedNote.value
+  return noteStore.notes.sort((a, b) => b.time - a.time)
+})
 
 async function newNote() {
   const note = await noteStore.newNote({ title: '新的标题', name: '作者名', detail: '写下你今日的想法吧！' })
@@ -28,10 +35,10 @@ async function newNote() {
         图灵日记本
         <button @click="newNote">+</button>
       </h2>
-      <input type="text" placeholder="搜索..." title="搜索日记" />
+      <input type="text" placeholder="搜索..." title="搜索日记" v-model="query" />
     </div>
     <aside>
-      <note-list-item v-for="note of noteStore.notes.value" v-bind="note" :state="noteStore.getState(note.id)" :key="note.id" />
+      <note-list-item v-for="note of notes" v-bind="note" :state="noteStore.getState(note.id)" :key="note.id" />
     </aside>
   </div>
 </template>

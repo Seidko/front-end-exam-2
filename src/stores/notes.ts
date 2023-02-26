@@ -18,19 +18,23 @@ export interface Conflict {
   diff: Note
 }
 
-export function transformTime(raw: Note): Note {
+
+function dedupe<T = any>(arr: T[], primary: (item: T) => string | number | symbol): T[] {
+  // @ts-ignore
+  return Object.values(arr.reduce((p, c) => ({...p, [primary(c)]: c}), {}))
+}
+
+function transformTime(raw: Note): Note {
   const note = raw
   note.time = new Date(raw.time).getTime()
   return note
 }
 
 export const useNotesStore = defineStore('notes', () => {
-  const localNotes = ref<Note[]>([])
+  const notes = ref<Note[]>([])
   const diffs = ref<Note[]>([])
 
-  remoteNote().then(n => localNotes.value = n)
-
-  const notes = computed(() => localNotes)
+  remoteNote().then(n => notes.value = n)
 
   async function newNote(note: Note): Promise<Note> {
     const { data } = await axios({
@@ -44,7 +48,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     const newNote = transformTime(data.data.item)
-    localNotes.value.push(newNote)
+    notes.value.push(newNote)
     return newNote
   }
 
@@ -59,7 +63,7 @@ export const useNotesStore = defineStore('notes', () => {
       throw new Error(`Error in updating note "[${note.id}] ${note.title}", code: ${data.code}`)
     }
 
-    localNotes.value.splice(localNotes.value.findIndex(n => n.id === note.id), 1)
+    notes.value.splice(notes.value.findIndex(n => n.id === note.id), 1)
   }
 
   async function remoteNote(): Promise<Note[]> {
@@ -82,8 +86,8 @@ export const useNotesStore = defineStore('notes', () => {
         throw new Error(`Error in updating note "[${diff.id}] ${diff.title}", code: ${data.code}`)
       }
       
-      const index = localNotes.value.findIndex(local => local.id === diff.id)
-      localNotes.value[index] = transformTime(data.data.item)
+      const index = notes.value.findIndex(n => n.id === diff.id)
+      notes.value[index] = transformTime(data.data.item)
       continue
     }
 
@@ -91,26 +95,46 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   function getNote(id: number): Note {
-    return diffs.value.find(d => d.id === id) ?? localNotes.value.find(n => n.id === id)
+    return diffs.value.find(d => d.id === id) ?? notes.value.find(n => n.id === id)
   }
 
   function getState(id: number): NoteState {
     if (diffs.value.find(d => d.id === id)) return 'modified'
   }
 
+  function search(condition: string, type: number) {
+    return axios({
+      method: 'POST',
+      url: '/dairy/selectDairyByCondition',
+      params: { type, condition }
+    })
+  }
+
+  async function searchNote(query: string): Promise<Note[]> {
+    const res = await Promise.all([
+      search(query, 2),
+      search(query, 1),
+      search(query, 3),
+    ])
+    
+    // @ts-ignore
+    return dedupe(res.map(r => r.data.data?.items.map((n: Note) => transformTime(n))).flat(), n => n.id)
+  }
+
   function updateDiff(note: Note) {
     if (note.id === undefined) return
-    const lIndex = localNotes.value.findIndex(l => l.id === note.id)
-    if (isEqual(localNotes.value[lIndex], note)) return
+    const lIndex = notes.value.findIndex(l => l.id === note.id)
+    if (isEqual(notes.value[lIndex], note)) return
     const dIndex = diffs.value.findIndex(d => d.id === note.id)
-    if (dIndex === -1) diffs.value.push({ ...localNotes.value[lIndex], ...note })
-    else diffs.value[dIndex] = { ...localNotes.value[lIndex], ...note }
+    if (dIndex === -1) diffs.value.push({ ...notes.value[lIndex], ...note })
+    else diffs.value[dIndex] = { ...notes.value[lIndex], ...note }
   }
 
   return { 
     getNote,
     newNote,
     deleteNote,
+    searchNote,
     sync,
     updateDiff,
     getState,

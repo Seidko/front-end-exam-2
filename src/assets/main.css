@@ -3,6 +3,8 @@
 #app {
   margin: 0 auto;
   font-weight: normal;
+  overflow: hidden;
+  height: 100vh;
   display: flex;
 }
 

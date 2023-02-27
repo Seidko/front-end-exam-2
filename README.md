@@ -8,6 +8,19 @@ Hi! 👋这里是 Seidko，这是我的前端考核项目，感谢各位大佬�
 
 我自认为已经做得很好了，但我还是没能把我想做的很多东西做出来，而且我不会搞图标😂这让界面变得很丑，我的美工真的很差🙏，非常抱歉。
 
+## 安装
+
+执行下列指令：
+
+```sh
+git clone https://github.com/Seidko/front-end-exam-2.git
+cd front-end-exam-2
+yarn
+yarn dev
+```
+
+然后访问显示的地址即可~
+
 ## 预览
 ![preview4](./docs/images/preview4.png)
 ![preview1](./docs/images/preview1.png)

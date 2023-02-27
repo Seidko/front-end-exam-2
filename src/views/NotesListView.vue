@@ -31,7 +31,7 @@ async function newNote() {
 <template>
   <div class="list" :class="{ narrow: route.params.id !== undefined}">
     <div class="header">
-      <h2>
+      <h2 @click="router.push('/')">
         图灵日记本
         <button @click="newNote">+</button>
       </h2>
@@ -44,6 +44,9 @@ async function newNote() {
 </template>
 
 <style scoped>
+h2 {
+  cursor: pointer;
+}
 
 .list {
   height: 100%;

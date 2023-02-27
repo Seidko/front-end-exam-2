@@ -12,19 +12,24 @@ const note = computed(() => noteStore.getNote(+route.params.id))
 const editorRef = ref<HTMLElement>()
 const dark = window.matchMedia('(prefers-color-scheme: dark)')
 let editorInstanse: editor.IStandaloneCodeEditor
+let deleted = false
 
 const name = computed({
   get: () => note.value?.name,
-  set: (value) => noteStore.updateDiff({ ...note.value, name: value })
+  set: (value) => {
+    if (!deleted) noteStore.updateDiff({ ...note.value, title: value })
+  }
 })
 
 const title = computed({
   get: () => note.value?.title,
-  set: (value) => noteStore.updateDiff({ ...note.value, title: value })
+  set: (value) => {
+    if (!deleted) noteStore.updateDiff({ ...note.value, title: value })
+  }
 })
 
 async function save() {
-  noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
+  if (!deleted) noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
   await noteStore.sync()
 }
 
@@ -35,15 +40,16 @@ async function onSave(e: KeyboardEvent) {
   }
 }
 
-async function delateNote() {
+async function deleteNote() {
+  deleted = true
   await noteStore.deleteNote(note.value)
-  router.push('/')
+  await router.push('/')
 }
 
 watch(note, (newNote, oldNote) => {
   const content = editorInstanse.getValue()
   if (newNote?.detail === content) return
-  noteStore.updateDiff({ ...oldNote, detail: content })
+  if (!deleted) noteStore.updateDiff({ ...oldNote, detail: content })
   editorInstanse.setValue(newNote?.detail ?? '')
 })
 dark.addEventListener('change', m => editorInstanse?.updateOptions({ theme: m.matches ? 'vs-dark' : 'vs-light' }))
@@ -63,7 +69,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
+  if (!deleted) noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
 
   document.removeEventListener('keydown', onSave, false)
   editorInstanse.dispose()
@@ -77,7 +83,7 @@ onUnmounted(() => {
       <button class="back" @click="router.push('/')">← 返回</button>
       <button class="save" @click="save">保存</button>
     </div>
-    <button class="delete" @click="delateNote">删除此笔记</button>
+    <button class="delete" @click="deleteNote">删除此笔记</button>
     <input type="text" v-model="title" class="title">
     <input type="text" v-model="name" class="name">
     <div class="line"></div>

@@ -64,6 +64,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     notes.value.splice(notes.value.findIndex(n => n.id === note.id), 1)
+    diffs.value.splice(diffs.value.findIndex(d => d.id === note.id), 1)
   }
 
   async function remoteNote(): Promise<Note[]> {

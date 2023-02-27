@@ -3,12 +3,14 @@ import { useNotesStore } from '@/stores/notes'
 import { computed, onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { editor } from 'monaco-editor'
+import type { Note } from '@/stores/notes'
+import type { ComputedRef } from 'vue'
 
 const noteStore = useNotesStore()
 const router = useRouter()
 const route = useRoute()
 
-const note = computed(() => noteStore.getNote(+route.params.id))
+const note: ComputedRef<Note> = computed(() => noteStore.getNote(+route.params.id) ?? note.value)
 const editorRef = ref<HTMLElement>()
 const dark = window.matchMedia('(prefers-color-scheme: dark)')
 let editorInstanse: editor.IStandaloneCodeEditor
@@ -69,7 +71,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (!deleted) noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
+  if (!deleted) noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue() })
 
   document.removeEventListener('keydown', onSave, false)
   editorInstanse.dispose()

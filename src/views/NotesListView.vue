@@ -77,6 +77,7 @@ input {
   outline: none;
   width: calc(100% - 16px);
   background-color: var(--color-background-mute);
+  color: var(--color-text);
   border: 0px;
   height: 30px;
   border-radius: 3px;

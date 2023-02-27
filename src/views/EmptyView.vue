@@ -17,4 +17,8 @@ code {
   padding: 4px 4px;
   border-radius: 3px;
 }
+
+div {
+  margin-left: 30px;
+}
 </style>

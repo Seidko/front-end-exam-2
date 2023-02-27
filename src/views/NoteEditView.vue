@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useNotesStore } from '@/stores/notes'
-import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { editor } from 'monaco-editor'
 
@@ -68,7 +68,7 @@ onMounted(() => {
   document.addEventListener('keydown', onSave, false)
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   if (!deleted) noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
 
   document.removeEventListener('keydown', onSave, false)
@@ -98,7 +98,6 @@ onUnmounted(() => {
 }
 
 .save {
-  font-size: 19px;
   background-color: var(--color-background-mute);
   padding: 10px 17px;
   border: transparent;
@@ -108,7 +107,6 @@ onUnmounted(() => {
 }
 
 .back {
-  font-size: 19px;
   background-color: var(--color-background-mute);
   padding: 10px 17px;
   border: transparent;

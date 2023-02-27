@@ -21,4 +21,11 @@ code {
 div {
   margin-left: 30px;
 }
+
+@media screen and (max-width: 600px) {
+  div {
+    display: none;
+  }
+}
+
 </style>

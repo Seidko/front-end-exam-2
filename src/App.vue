@@ -7,7 +7,6 @@ import { RouterView } from 'vue-router'
   <notes-list />
   
   <router-view />
-
 </template>
 
 <style scoped>

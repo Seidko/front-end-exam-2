@@ -23,12 +23,15 @@ const title = computed({
   set: (value) => noteStore.updateDiff({ ...note.value, title: value })
 })
 
+async function save() {
+  noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
+  await noteStore.sync()
+}
+
 async function onSave(e: KeyboardEvent) {
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault()
-
-    noteStore.updateDiff({ ...note.value, detail: editorInstanse.getValue()})
-    await noteStore.sync()
+    await save()
   }
 }
 
@@ -70,7 +73,10 @@ onUnmounted(() => {
 
 <template>
   <div id="editor-view">
-    <button class="back" @click="router.push('/')">← 返回</button>
+    <div class="narrow">
+      <button class="back" @click="router.push('/')">← 返回</button>
+      <button class="save" @click="save">保存</button>
+    </div>
     <button class="delete" @click="delateNote">删除此笔记</button>
     <input type="text" v-model="title" class="title">
     <input type="text" v-model="name" class="name">
@@ -80,9 +86,22 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.back {
-  margin: 20px 0 0 40px;
+.narrow {
+  margin: 20px 40px;
   display: none;
+}
+
+.save {
+  font-size: 19px;
+  background-color: var(--color-background-mute);
+  padding: 10px 17px;
+  border: transparent;
+  color: var(--color-text);
+  border-radius: 3px;
+  float: right;
+}
+
+.back {
   font-size: 19px;
   background-color: var(--color-background-mute);
   padding: 10px 17px;
@@ -145,7 +164,7 @@ input {
     width: 100%;
   }
 
-  .back {
+  .narrow {
     display: block;
   }
 
